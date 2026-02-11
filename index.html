@@ -209,7 +209,6 @@ textarea#reasonInput {
     resize: vertical; /* Nur vertikal skalierbar */
     min-height: 80px; /* Mindesthöhe */
 }
-
 /* Custom Alert Dialog Styles - NEU */
 #customAlertDialogOverlay {
   position: fixed;
@@ -246,7 +245,6 @@ textarea#reasonInput {
     transform: translateY(0);
 }
 /* Die Klassen .dialog-message, .dialog-buttons und .dialog-button-yes können wiederverwendet werden */
-
 </style>
 </head>
 <body>
@@ -260,7 +258,6 @@ textarea#reasonInput {
 <div id="comments"></div>
 </div>
 <div class="by-paul">by Paul</div>
-
 <!-- Eigene HTML-Struktur für das Bestätigungsfenster (Confirm) -->
 <div id="customConfirmOverlay">
   <div id="customConfirmDialog">
@@ -272,7 +269,6 @@ textarea#reasonInput {
   </div>
 </div>
 <!-- Ende der eigenen HTML-Struktur für Confirm -->
-
 <!-- Eigene HTML-Struktur für das Hinweisfenster (Alert) - NEU -->
 <div id="customAlertDialogOverlay">
   <div id="customAlertDialog">
@@ -283,7 +279,6 @@ textarea#reasonInput {
   </div>
 </div>
 <!-- Ende der eigenen HTML-Struktur für Alert -->
-
 <script>
 let yes = document.getElementById("yes");
 let no = document.getElementById("no");
@@ -304,11 +299,13 @@ let lines = [
 ];
 let index = 0;
 
+// NEU: Globale Variable zum Speichern der ausgewählten Essensoption
+let selectedFoodChoice = "Keine Angabe"; // Standardwert, falls nichts ausgewählt wird
+
 // Referenzen für das eigene Bestätigungsfenster (Confirm)
 const customConfirmOverlay = document.getElementById('customConfirmOverlay');
 const customConfirmYes = document.getElementById('customConfirmYes');
 const customConfirmNo = document.getElementById('customConfirmNo');
-
 // Funktion zum Anzeigen des Custom Confirm Dialogs
 function showCustomConfirm() {
     return new Promise((resolve) => {
@@ -329,18 +326,15 @@ function showCustomConfirm() {
         customConfirmNo.addEventListener('click', handleNo);
     });
 }
-
 // Referenzen für das eigene Hinweisfenster (Alert) - NEU
 const customAlertDialogOverlay = document.getElementById('customAlertDialogOverlay');
 const customAlertDialogMessage = document.getElementById('customAlertDialogMessage');
 const customAlertDialogOk = document.getElementById('customAlertDialogOk');
-
 // Funktion zum Anzeigen des Custom Alert Dialogs - NEU
 function showCustomAlert(message) {
     return new Promise((resolve) => {
         customAlertDialogMessage.innerText = message; // Nachricht setzen
         customAlertDialogOverlay.classList.add('active'); // Dialog anzeigen
-
         const handleClick = () => {
             customAlertDialogOverlay.classList.remove('active'); // Dialog ausblenden
             customAlertDialogOk.removeEventListener('click', handleClick); // Event Listener entfernen
@@ -349,7 +343,6 @@ function showCustomAlert(message) {
         customAlertDialogOk.addEventListener('click', handleClick);
     });
 }
-
 no.onclick = () => {
   scale += 0.15;
   yes.style.transform = `scale(${scale})`;
@@ -361,7 +354,6 @@ no.onclick = () => {
     comments.innerText = "Das wird nichts bringen! 😉";
   }
 };
-
 yes.onclick = () => {
   app.innerHTML = `
     <h1>❤️❤️❤️</h1>
@@ -395,14 +387,26 @@ yes.onclick = () => {
     <button class="cant-send-button" onclick="cantSendChoice()">Der Plan geht nicht</button>
     <p id="done" style="margin-top:20px;color:#777;"></p>
   `;
+
+  // NEU: Event Listener für die neu erstellten Radio-Buttons hinzufügen
+  const radioButtons = document.querySelectorAll('input[name="r"]');
+  radioButtons.forEach(radio => {
+    radio.addEventListener('change', (event) => {
+      selectedFoodChoice = event.target.value; // Speichert die Auswahl
+      console.log('Ausgewähltes Essen gespeichert:', selectedFoodChoice); // Nur zum Debuggen
+    });
+  });
 };
 
-async function send(){ // `async` hinzugefügt, da wir jetzt `await` verwenden könnten, falls showCustomAlert ein Promise zurückgibt
+async function send(){
   let choice = document.querySelector('input[name="r"]:checked');
   if(!choice){
-    await showCustomAlert("Bitte wähle eine Option aus!"); // alert() ersetzt durch showCustomAlert()
+    await showCustomAlert("Bitte wähle eine Option aus!");
     return;
   }
+  // Optional: selectedFoodChoice hier nochmal aktualisieren, falls der User direkt sendet
+  selectedFoodChoice = choice.value;
+
   fetch("https://formspree.io/f/xnjbjbzw",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
@@ -410,7 +414,6 @@ async function send(){ // `async` hinzugefügt, da wir jetzt `await` verwenden k
   });
   document.getElementById("done").innerText = "Deine Antwort wurde gesendet! Ich Liebe Dich ❤️";
 }
-
 // Angepasste Funktion für den "Ich kann nicht"-Button mit eigenem Bestätigungsfenster
 async function cantSendChoice(){
     let doneParagraph = document.getElementById("done");
@@ -432,21 +435,21 @@ async function cantSendChoice(){
         doneParagraph.innerText = "Mach mir doch keine Angst man!!!";
     }
 }
-
 // Neue Funktion zum Abschicken des Grundes
-async function sendReason(){ // `async` hinzugefügt
+async function sendReason(){
     let reasonInput = document.getElementById("reasonInput");
-    let reason = reasonInput.value.trim(); // .trim() entfernt Leerzeichen am Anfang und Ende
-    let doneParagraph = document.getElementById("done"); // Referenz zum neuen done-Paragraphen
+    let reason = reasonInput.value.trim();
+    let doneParagraph = document.getElementById("done");
     if (!reason) {
-        await showCustomAlert("Bitte gib einen Grund ein, bevor du abschickst!"); // alert() ersetzt durch showCustomAlert()
+        await showCustomAlert("Bitte gib einen Grund ein, bevor du abschickst!");
         return;
     }
     fetch("https://formspree.io/f/xnjbjbzw",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-            date_choice: "unable_to_choose", // Oder einen anderen Wert, um dies zu kennzeichnen
+            // NEU: Sende die zuvor gespeicherte Essensauswahl mit
+            pre_selected_food_choice: selectedFoodChoice,
             reason: reason
         })
     });
@@ -457,5 +460,4 @@ async function sendReason(){ // `async` hinzugefügt
 }
 </script>
 </body>
-
 </html>
