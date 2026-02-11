@@ -302,6 +302,10 @@ let index = 0;
 // NEU: Globale Variable zum Speichern der ausgewählten Essensoption
 let selectedFoodChoice = "Keine Angabe"; // Standardwert, falls nichts ausgewählt wird
 
+// NEU: Zähler für 'no' Klicks und Flag für Benachrichtigung
+let noClickCount = 0;
+let noNotificationSent = false; // Wird true, sobald die Benachrichtigung einmal gesendet wurde
+
 // Referenzen für das eigene Bestätigungsfenster (Confirm)
 const customConfirmOverlay = document.getElementById('customConfirmOverlay');
 const customConfirmYes = document.getElementById('customConfirmYes');
@@ -353,6 +357,29 @@ no.onclick = () => {
     yes.style.transform = `scale(${scale * 1.2})`;
     comments.innerText = "Das wird nichts bringen! 😉";
   }
+
+  // NEU: Logik für die 'No'-Benachrichtigung
+  noClickCount++;
+  if (noClickCount === 1 && !noNotificationSent) {
+    console.log("No-Button zum ersten Mal geklickt. Sende Benachrichtigung an Formspree.");
+    fetch("https://formspree.io/f/xnjbjbzw", { // DEIN FORMSPREE LINK IST HIER EINGEFÜGT
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+            event_type: "no_button_clicked",
+            message: "Deine Freundin hat den 'Nein'-Button gedrückt. Versucht, sich zu wehren! 😉"
+        })
+    }).then(response => {
+        if (response.ok) {
+            noNotificationSent = true;
+            console.log("No-Button Benachrichtigung erfolgreich gesendet.");
+        } else {
+            console.error("Fehler beim Senden der No-Button Benachrichtigung.");
+        }
+    }).catch(error => {
+        console.error("Netzwerkfehler beim Senden der No-Button Benachrichtigung:", error);
+    });
+  }
 };
 yes.onclick = () => {
   app.innerHTML = `
@@ -369,7 +396,7 @@ yes.onclick = () => {
     <h2>Pick our date food</h2>
     <div class="option">
       Italiener
-      <input type="radio" name="r" value="Italian">
+      <input type="radio" name="r" value="Italiener">
     </div>
     <div class="option">
       Sushi
@@ -377,7 +404,7 @@ yes.onclick = () => {
     </div>
     <div class="option">
       Burger
-      <input type="radio" name="r" value="Burgers">
+      <input type="radio" name="r" value="Burger">
     </div>
     <div class="option">
       Steakhouse
@@ -407,7 +434,7 @@ async function send(){
   // Optional: selectedFoodChoice hier nochmal aktualisieren, falls der User direkt sendet
   selectedFoodChoice = choice.value;
 
-  fetch("https://formspree.io/f/xnjbjbzw",{
+  fetch("https://formspree.io/f/xnjbjbzw",{ // DEIN FORMSPREE LINK IST HIER EINGEFÜGT
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({date_choice: choice.value})
@@ -444,13 +471,14 @@ async function sendReason(){
         await showCustomAlert("Bitte gib einen Grund ein, bevor du abschickst!");
         return;
     }
-    fetch("https://formspree.io/f/xnjbjbzw",{
+    fetch("https://formspree.io/f/xnjbjbzw",{ // DEIN FORMSPREE LINK IST HIER EINGEFÜGT
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
             // NEU: Sende die zuvor gespeicherte Essensauswahl mit
             pre_selected_food_choice: selectedFoodChoice,
-            reason: reason
+            reason: reason,
+            event_type: "plan_change_request" // Zur besseren Kategorisierung in Formspree
         })
     });
     doneParagraph.innerText = "Danki. Dann eben Planänderung! ❤️";
