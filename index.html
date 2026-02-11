@@ -403,7 +403,7 @@ async function send(){ // `async` hinzugefügt, da wir jetzt `await` verwenden k
     await showCustomAlert("Bitte wähle eine Option aus!"); // alert() ersetzt durch showCustomAlert()
     return;
   }
-  fetch("https://formspree.io/f/DEINE_ID_HIER",{
+  fetch("https://formspree.io/f/xnjbjbzw",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body: JSON.stringify({date_choice: choice.value})
@@ -442,7 +442,7 @@ async function sendReason(){ // `async` hinzugefügt
         await showCustomAlert("Bitte gib einen Grund ein, bevor du abschickst!"); // alert() ersetzt durch showCustomAlert()
         return;
     }
-    fetch("https://formspree.io/f/DEINE_ID_HIER",{
+    fetch("https://formspree.io/f/xnjbjbzw",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
@@ -457,4 +457,5 @@ async function sendReason(){ // `async` hinzugefügt
 }
 </script>
 </body>
+
 </html>
